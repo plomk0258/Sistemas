@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Juegos de Godot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>🎮 Gestor de Juegos de Godot</h1>
+    </header>
+
+    <main>
+        <!-- Formulario para subir juegos -->
+        <section id="upload-section">
+            <h2>Subir un Juego</h2>
+    
+        </section>
+
+        <!-- Lista de juegos subidos -->
+        <section id="games-section">
+            <h2>Juegos Subidos</h2>
+            <div id="games-list">
+                <!-- Ejemplo de un juego subido -->
+                <div class="game-item">
+                    <div>
+                        <h4>Cartas</h4>
+                        <p><strong>Categoría:</strong> Otros</p>
+                        <p>juega</p>
+                    </div>
+                    <div>
+                        <button class="btn-play" data-file="ruta/del/archivo.pck">▶️ Jugar</button>
+                        <button class="btn-delete">❌ Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2025 Gestor de Juegos de Godot. Todos los derechos reservados.</p>
+    </footer>
+
+</body>
+</html>
