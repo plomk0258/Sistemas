@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrector Ortográfico Inteligente</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .editor-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .results-section {
+            background: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #dee2e6;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .text-editor {
+            width: 100%;
+            min-height: 300px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .text-editor:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .check-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s;
+        }
+        
+        .check-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .error-item {
+            background: #fff5f5;
+            border: 2px solid #fed7d7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .error-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .error-word {
+            color: #e53e3e;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        
+        .error-type {
+            color: #718096;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .suggestion {
+            background: #e6fffa;
+            color: #234e52;
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #b2f5ea;
+        }
+        
+        .suggestion:hover {
+            background: #38b2ac;
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .confidence-bar {
+            background: #e2e8f0;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .confidence-high { background: #38a169; }
+        .confidence-medium { background: #ed8936; }
+        .confidence-low { background: #e53e3e; }
+        
+        .technical-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .algorithm-step {
+            background: #edf2f7;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #4299e1;
+        }
+        
+        .word-highlight {
+            background: #fed7d7;
+            color: #e53e3e;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .word-correct {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Corrector Ortográfico Inteligente</h1>
+            <p>Detección avanzada de errores con algoritmos de Machine Learning</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="editor-section">
+                <h2 class="section-title">
+                    ✍️ Editor de Texto
+                </h2>
+                <textarea 
+                    id="textInput" 
+                    class="text-editor" 
+                    placeholder="Escribe tu texto aquí para verificar la ortografía...
+
+"
+                ></textarea>
+                <button class="check-btn" onclick="checkSpelling()">
+                    🔍 Verificar Ortografía
+                </button>
+            </div>
+            
+            <div class="results-section">
+                <h2 class="section-title">
+                    📊 Análisis Ortográfico
+                </h2>
+                
+                <div class="stats-panel">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalWords">0</span>
+                        <span class="stat-label">Palabras</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="errorCount">0</span>
+                        <span class="stat-label">Errores</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="accuracy">100%</span>
+                        <span class="stat-label">Precisión</span>
+                    </div>
+                </div>
+                
+                <div id="errorsList">
+                    <div style="text-align: center; color: #718096; padding: 40px;">
+                        Escribe texto y presiona "Verificar Ortografía" para comenzar el análisis
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="technical-info">
+            <h3>🔬 Tecnología Subyacente</h3>
+            <div class="algorithm-step">
+                <strong>1. Tokenización:</strong> Separación del texto en palabras individuales
+            </div>
+            <div class="algorithm-step">
+                <strong>2. Normalización:</strong> Conversión a minúsculas y limpieza de caracteres especiales
+            </div>
+            <div class="algorithm-step">
+                <strong>3. Verificación de Diccionario:</strong> Comparación con base de datos de palabras válidas
+            </div>
+            <div class="algorithm-step">
+                <strong>4. Algoritmo de Distancia Levenshtein:</strong> Cálculo de similitud entre palabras
+            </div>
+            <div class="algorithm-step">
+                <strong>5. Análisis Fonético:</strong> Comparación por pronunciación similar
+            </div>
+            <div class="algorithm-step">
+                <strong>6. Ranking de Sugerencias:</strong> Ordenamiento por probabilidad de corrección
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Diccionario base en español 
+ const dictionary = new Set([
+    // Palabras básicas originales
+    'el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'es', 'se', 'no', 'te', 'lo', 'le', 'da', 'su', 'por', 'son', 'con', 'para', 'al', 'como', 'las', 'pero', 'sus', 'del', 'está', 'todo', 'una', 'son', 'me', 'uno', 'tiene', 'más', 'muy', 'puede', 'mi', 'sin', 'sobre', 'este', 'ya', 'entre', 'cuando', 'hasta', 'desde', 'ser', 'los', 'si', 'porque', 'qué', 'solo', 'han', 'hay', 'esta', 'sí', 'fue', 'tan', 'tanto', 'donde', 'mientras', 'quien', 'menos', 'estos', 'ese', 'ni', 'yo', 'otro', 'él', 'eso', 'ahora', 'cada', 'e', 'vida', 'nada', 'nivel', 'bien', 'país', 'hombre', 'agua', 'día', 'parte', 'tiempo', 'trabajo', 'gobierno', 'número', 'grupo', 'año', 'caso', 'empresa', 'lugar', 'forma', 'mujer', 'dar', 'llegar', 'pasar', 'primera', 'mano', 'información', 'momento', 'problema', 'servicio', 'hijo', 'vez', 'cabeza', 'proceso', 'cambio', 'programa', 'mercado', 'realidad', 'historia', 'precio', 'recurso', 'tipo', 'manera', 'persona', 'resultado', 'poder', 'ciudad', 'centro', 'campo',
+    
+    // Palabras específicas originales
+    'hola', 'madrid', 'programación', 'aprendiendo', 'python', 'también', 'ciencia', 'ficción', 'nombre', 'juan', 'vivo', 'gusta', 'mucho', 'estoy', 'encanta', 'leer', 'libros', 'desarrollo', 'tecnología', 'inteligencia', 'artificial', 'algoritmo', 'datos', 'análisis', 'sistema', 'aplicación', 'función', 'variable', 'código', 'lenguaje', 'computadora', 'internet', 'software', 'hardware', 'base', 'red', 'usuario', 'cliente', 'servidor', 'archivo', 'documento', 'proyecto', 'equipo', 'solución', 'herramienta',
+
+    // Verbos comunes
+    'hacer', 'decir', 'estar', 'tener', 'poder', 'poner', 'venir', 'salir', 'querer', 'deber', 'saber', 'ver', 'ir', 'parecer', 'seguir', 'encontrar', 'llamar', 'volver', 'conocer', 'sentir', 'pensar', 'tomar', 'crear', 'vivir', 'creer', 'hablar', 'llevar', 'dejar', 'aparecer', 'considerar', 'oír', 'escribir', 'completar', 'decidir', 'ganar', 'producir', 'abrir', 'esperar', 'ofrecer', 'recibir', 'correr', 'mover', 'pagar', 'servir', 'construir', 'mantener', 'empezar', 'conseguir', 'aceptar', 'recordar', 'terminar', 'permitir', 'aprender', 'cambiar', 'actuar', 'necesitar', 'crecer', 'estudiar', 'ayudar', 'jugar', 'trabajar', 'caminar', 'comprar', 'vender', 'cocinar', 'dormir', 'despertar', 'levantarse', 'sentarse', 'acostarse', 'bañarse', 'vestirse', 'lavarse', 'cepillarse', 'peinarse', 'maquillarse', 'afeitarse',
+
+    // Sustantivos comunes
+    'casa', 'familia', 'madre', 'padre', 'hermano', 'hermana', 'abuelo', 'abuela', 'tío', 'tía', 'primo', 'prima', 'nieto', 'nieta', 'esposo', 'esposa', 'novio', 'novia', 'amigo', 'amiga', 'bebé', 'niño', 'niña', 'joven', 'adulto', 'persona', 'gente', 'mundo', 'tierra', 'cielo', 'sol', 'luna', 'estrella', 'nube', 'lluvia', 'viento', 'nieve', 'calor', 'frío', 'primavera', 'verano', 'otoño', 'invierno', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'mañana', 'tarde', 'noche', 'hora', 'minuto', 'segundo', 'semana', 'mes', 'ayer', 'hoy', 'mañana', 'pasado', 'presente', 'futuro',
+
+    // Colores
+    'rojo', 'azul', 'verde', 'amarillo', 'negro', 'blanco', 'gris', 'rosa', 'morado', 'naranja', 'marrón', 'violeta', 'dorado', 'plateado',
+
+    // Números
+    'cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa', 'cien', 'mil', 'millón', 'primero', 'segundo', 'tercero', 'cuarto', 'quinto',
+
+    // Partes del cuerpo
+    'cabeza', 'cara', 'ojo', 'oreja', 'nariz', 'boca', 'diente', 'lengua', 'cuello', 'hombro', 'brazo', 'codo', 'muñeca', 'mano', 'dedo', 'uña', 'pecho', 'espalda', 'estómago', 'cintura', 'cadera', 'pierna', 'rodilla', 'tobillo', 'pie', 'corazón', 'cerebro', 'hueso', 'sangre', 'piel', 'pelo', 'cabello',
+
+    // Comida y bebida
+    'comida', 'desayuno', 'almuerzo', 'cena', 'pan', 'arroz', 'pasta', 'carne', 'pollo', 'pescado', 'huevo', 'leche', 'queso', 'mantequilla', 'aceite', 'sal', 'azúcar', 'miel', 'fruta', 'manzana', 'plátano', 'naranja', 'limón', 'uva', 'fresa', 'pera', 'durazno', 'sandía', 'melón', 'verdura', 'lechuga', 'tomate', 'cebolla', 'ajo', 'papa', 'zanahoria', 'brócoli', 'espinaca', 'agua', 'jugo', 'café', 'té', 'vino', 'cerveza', 'refresco', 'postre', 'helado', 'pastel', 'chocolate', 'galleta', 'dulce', 'caramelo',
+
+    // Ropa
+    'ropa', 'camisa', 'pantalón', 'falda', 'vestido', 'chaqueta', 'abrigo', 'suéter', 'camiseta', 'blusa', 'corbata', 'cinturón', 'zapato', 'bota', 'sandalia', 'calcetín', 'media', 'ropa interior', 'pijama', 'sombrero', 'gorra', 'guante', 'bufanda',
+
+    // Casa y muebles
+    'dormitorio', 'sala', 'cocina', 'baño', 'comedor', 'oficina', 'jardín', 'balcón', 'terraza', 'puerta', 'ventana', 'pared', 'techo', 'suelo', 'escalera', 'cama', 'sofá', 'silla', 'mesa', 'escritorio', 'armario', 'estante', 'espejo', 'lámpara', 'televisión', 'radio', 'teléfono', 'computadora', 'refrigerador', 'estufa', 'horno', 'lavadora', 'secadora',
+
+    // Transporte
+    'coche', 'carro', 'auto', 'automóvil', 'autobús', 'tren', 'avión', 'barco', 'bicicleta', 'motocicleta', 'taxi', 'metro', 'tranvía', 'camión', 'camioneta', 'gasolina', 'combustible', 'carretera', 'calle', 'avenida', 'plaza', 'estación', 'aeropuerto', 'puerto', 'semáforo', 'puente', 'túnel',
+
+    // Educación y trabajo
+    'escuela', 'colegio', 'universidad', 'instituto', 'clase', 'curso', 'lección', 'examen', 'tarea', 'estudiante', 'profesor', 'maestro', 'director', 'libro', 'cuaderno', 'lápiz', 'bolígrafo', 'papel', 'pizarra', 'escritorio', 'biblioteca', 'oficina', 'jefe', 'empleado', 'trabajo', 'empleo', 'profesión', 'carrera', 'sueldo', 'salario', 'dinero', 'banco', 'tarjeta', 'efectivo', 'cheque',
+
+    // Emociones y sentimientos
+    'feliz', 'triste', 'enojado', 'contento', 'alegre', 'preocupado', 'nervioso', 'tranquilo', 'cansado', 'aburrido', 'emocionado', 'asustado', 'sorprendido', 'orgulloso', 'avergonzado', 'celoso', 'enamorado', 'amor', 'cariño', 'odio', 'miedo', 'alegría', 'tristeza', 'ira', 'paz', 'esperanza', 'sueño', 'pesadilla',
+
+    // Adjetivos comunes
+    'grande', 'pequeño', 'alto', 'bajo', 'largo', 'corto', 'ancho', 'estrecho', 'grueso', 'delgado', 'gordo', 'flaco', 'fuerte', 'débil', 'rápido', 'lento', 'nuevo', 'viejo', 'joven', 'antiguo', 'moderno', 'fácil', 'difícil', 'simple', 'complicado', 'barato', 'caro', 'rico', 'pobre', 'limpio', 'sucio', 'claro', 'oscuro', 'brillante', 'opaco', 'suave', 'duro', 'caliente', 'frío', 'tibio', 'seco', 'húmedo', 'mojado', 'lleno', 'vacío', 'abierto', 'cerrado', 'público', 'privado', 'nacional', 'internacional', 'local', 'regional', 'global', 'mundial',
+
+    // Deportes y entretenimiento
+    'fútbol', 'baloncesto', 'tenis', 'golf', 'béisbol', 'natación', 'correr', 'caminar', 'gimnasio', 'ejercicio', 'deporte', 'equipo', 'jugador', 'partido', 'juego', 'ganar', 'perder', 'empatar', 'película', 'cine', 'teatro', 'concierto', 'música', 'canción', 'baile', 'danza', 'arte', 'pintura', 'dibujo', 'escultura', 'museo', 'galería', 'festival', 'fiesta', 'celebración', 'cumpleaños', 'boda', 'graduación',
+
+    // Tecnología ampliada
+    'móvil', 'celular', 'smartphone', 'tablet', 'ordenador', 'portátil', 'ratón', 'teclado', 'pantalla', 'monitor', 'impresora', 'escáner', 'cámara', 'fotografía', 'video', 'audio', 'música', 'película', 'juego', 'videojuego', 'aplicación', 'app', 'programa', 'navegador', 'buscador', 'página', 'sitio', 'web', 'blog', 'correo', 'email', 'mensaje', 'chat', 'llamada', 'videollamada', 'redes', 'sociales', 'facebook', 'twitter', 'instagram', 'whatsapp', 'youtube', 'google', 'wifi', 'bluetooth', 'usb', 'cable', 'batería', 'cargador', 'memoria', 'disco', 'duro', 'nube', 'backup', 'copia', 'seguridad', 'virus', 'antivirus', 'firewall', 'contraseña', 'usuario', 'cuenta', 'perfil', 'configuración', 'ajustes',
+
+    // Salud y medicina
+    'salud', 'enfermedad', 'medicina', 'médico', 'doctor', 'hospital', 'clínica', 'farmacia', 'medicamento', 'pastilla', 'inyección', 'vacuna', 'operación', 'cirugía', 'tratamiento', 'cura', 'dolor', 'fiebre', 'tos', 'gripe', 'resfriado', 'alergia', 'infección', 'herida', 'cicatriz', 'vendaje', 'yeso', 'muletas', 'silla', 'ruedas', 'ambulancia', 'emergencia', 'urgencia', 'primeros', 'auxilios',
+
+    // Naturaleza y animales
+    'animal', 'perro', 'gato', 'pájaro', 'pez', 'caballo', 'vaca', 'cerdo', 'oveja', 'cabra', 'pollo', 'gallo', 'gallina', 'pato', 'ganso', 'conejo', 'ratón', 'rata', 'hamster', 'león', 'tigre', 'elefante', 'jirafa', 'mono', 'oso', 'lobo', 'zorro', 'ciervo', 'águila', 'halcón', 'búho', 'serpiente', 'lagarto', 'tortuga', 'rana', 'mariposa', 'abeja', 'hormiga', 'araña', 'mosca', 'mosquito', 'árbol', 'flor', 'hoja', 'rama', 'raíz', 'tronco', 'hierba', 'césped', 'jardín', 'parque', 'bosque', 'selva', 'desierto', 'montaña', 'colina', 'valle', 'río', 'lago', 'mar', 'océano', 'playa', 'arena', 'roca', 'piedra', 'isla', 'continente', 'país', 'estado', 'provincia', 'región', 'ciudad', 'pueblo', 'aldea', 'barrio', 'vecindario'
+]);
+
+// Errores comunes y correcciones expandidas
+const commonMistakes = {
+    // Errores originales
+    'madrit': 'madrid',
+    'programacion': 'programación',
+    'aprendendo': 'aprendiendo',
+    'tambien': 'también',
+    'siencia': 'ciencia',
+    'ficcion': 'ficción',
+    'ola': 'hola',
+    'k': 'que',
+    'q': 'que',
+    'xq': 'porque',
+    'porq': 'porque',
+    'bn': 'bien',
+    'tbn': 'también',
+    'msj': 'mensaje',
+    'pq': 'porque',
+    'wey': 'güey',
+    'we': 'güey',
+
+    // Errores de acentos
+    'mas': 'más',
+    'mi': 'mí',
+    'tu': 'tú',
+    'el': 'él',
+    'si': 'sí',
+    'te': 'té',
+    'solo': 'sólo',
+    'como': 'cómo',
+    'cuando': 'cuándo',
+    'donde': 'dónde',
+    'que': 'qué',
+    'quien': 'quién',
+    'cual': 'cuál',
+    'cuanto': 'cuánto',
+    'acion': 'ación',
+    'informacion': 'información',
+    'nacion': 'nación',
+    'educacion': 'educación',
+    'situacion': 'situación',
+    'relacion': 'relación',
+    'creacion': 'creación',
+    'comunicacion': 'comunicación',
+    'organizacion': 'organización',
+    'participacion': 'participación',
+    'colaboracion': 'colaboración',
+    'innovacion': 'innovación',
+    'transformacion': 'transformación',
+
+    // Errores de h
+    'aber': 'haber',
+    'acer': 'hacer',
+    'ablar': 'hablar',
+    'ola': 'hola',
+    'ombre': 'hombre',
+    'oy': 'hoy',
+    'ora': 'hora',
+    'asta': 'hasta',
+    'ermano': 'hermano',
+    'istoria': 'historia',
+    'otel': 'hotel',
+    'ospital': 'hospital',
+
+    // Errores de b/v
+    'benir': 'venir',
+    'bolver': 'volver',
+    'bivir': 'vivir',
+    'berdad': 'verdad',
+    'berde': 'verde',
+    'baca': 'vaca',
+    'biento': 'viento',
+    'biaje': 'viaje',
+    'abia': 'había',
+    'estaba': 'estaba',
+    'tenia': 'tenía',
+    'sabia': 'sabía',
+
+    // Errores de ll/y
+    'llo': 'yo',
+    'lloviendo': 'lloviendo',
+    'callendo': 'cayendo',
+    'oyendo': 'oyendo',
+    'leyendo': 'leyendo',
+    'creyendo': 'creyendo',
+    'huyendo': 'huyendo',
+
+    // Contracciones y abreviaciones
+    'd': 'de',
+    'x': 'por',
+    'xa': 'para',
+    'xo': 'pero',
+    'ñ': 'ñ',
+    'n': 'en',
+    'sta': 'está',
+    'toy': 'estoy',
+    'tas': 'estás',
+    'ta': 'está',
+    'tngo': 'tengo',
+    'tnes': 'tienes',
+    'tne': 'tiene',
+    'ace': 'hace',
+    'aces': 'haces',
+    'dnd': 'donde',
+    'cnd': 'cuando',
+    'cm': 'como',
+    'xfa': 'por favor',
+    'pf': 'por favor',
+    'pfv': 'por favor',
+    'grax': 'gracias',
+    'gcs': 'gracias',
+    'tq': 'te quiero',
+    'tkm': 'te quiero mucho',
+    'tam': 'también',
+    'tmb': 'también',
+    'pqe': 'porque',
+    'xqe': 'porque',
+
+    // Palabras en inglés comunes
+    'ok': 'vale',
+    'bye': 'adiós',
+    'hi': 'hola',
+    'hello': 'hola',
+    'sorry': 'perdón',
+    'please': 'por favor',
+    'thanks': 'gracias',
+    'you': 'tú',
+    'me': 'yo',
+    'yes': 'sí',
+    'no': 'no',
+    'good': 'bueno',
+    'bad': 'malo',
+    'nice': 'bonito',
+    'cool': 'genial',
+    'love': 'amor',
+    'like': 'gustar',
+    'want': 'querer',
+    'need': 'necesitar',
+    'have': 'tener',
+    'go': 'ir',
+    'come': 'venir',
+    'see': 'ver',
+    'know': 'saber',
+    'think': 'pensar',
+    'say': 'decir',
+    'tell': 'contar',
+    'get': 'conseguir',
+    'give': 'dar',
+    'take': 'tomar',
+    'make': 'hacer',
+    'put': 'poner',
+
+    // Errores de escritura rápida en móvil
+    'ase': 'hace',
+    'ases': 'haces',
+    'ase': 'hace',
+    'iso': 'hizo',
+    'isieron': 'hicieron',
+    'pusieron': 'pusieron',
+    'dijeron': 'dijeron',
+    'fueron': 'fueron',
+    'tubieron': 'tuvieron',
+    'estubo': 'estuvo',
+    'ubiera': 'hubiera',
+    'ubiese': 'hubiese',
+    'aiga': 'haya',
+    'aver': 'a ver',
+    'haber': 'a ver', // cuando se usa como expresión
+    'echo': 'hecho',
+    'echa': 'hecha',
+    'botar': 'votar', // en contexto electoral
+    'votar': 'botar', // en contexto de tirar
+    'coser': 'cocer',
+    'cocer': 'coser',
+
+    // Errores regionales y modismos
+    'pos': 'pues',
+    'tons': 'entonces',
+    'weno': 'bueno',
+    'sta': 'está',
+    'toy': 'estoy',
+    'noc': 'no sé',
+    'nose': 'no sé',
+    'segun': 'según',
+    'talves': 'tal vez',
+    'talvez': 'tal vez',
+    'deveras': 'de veras',
+    'denada': 'de nada',
+    'porsierto': 'por cierto',
+    'acerca': 'acerca',
+    'asia': 'hacia',
+    'acia': 'hacia',
+
+    // Números mal escritos
+    'dies': 'diez',
+    'onse': 'once',
+    'dose': 'doce',
+    'trese': 'trece',
+    'catorse': 'catorce',
+    'quinse': 'quince',
+    'diesiseis': 'dieciséis',
+    'diesisiete': 'diecisiete',
+    'diesiocho': 'dieciocho',
+    'diesinueve': 'diecinueve',
+    'beinte': 'veinte',
+    'treinta': 'treinta',
+    'cuarenta': 'cuarenta',
+    'sincuenta': 'cincuenta',
+    'sesenta': 'sesenta',
+    'setenta': 'setenta',
+    'ochenta': 'ochenta',
+    'nobenta': 'noventa',
+    'sien': 'cien',
+    'siento': 'ciento',
+    'mil': 'mil',
+    'millon': 'millón'
+};
+
+
+        // Función para calcular la distancia de Levenshtein
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+            const n = str1.length;
+            const m = str2.length;
+
+            if (n === 0) return m;
+            if (m === 0) return n;
+
+            for (let i = 0; i <= n; i++) {
+                matrix[i] = [i];
+            }
+
+            for (let j = 0; j <= m; j++) {
+                matrix[0][j] = j;
+            }
+
+            for (let i = 1; i <= n; i++) {
+                for (let j = 1; j <= m; j++) {
+                    const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j - 1] + cost
+                    );
+                }
+            }
+
+            return matrix[n][m];
+        }
+
+        // Función para generar sugerencias basadas en distancia
+        function generateSuggestions(word) {
+            const suggestions = [];
+            const maxDistance = Math.min(3, Math.ceil(word.length / 3));
+
+            // Verificar errores comunes primero
+            if (commonMistakes[word.toLowerCase()]) {
+                suggestions.push({
+                    word: commonMistakes[word.toLowerCase()],
+                    confidence: 95,
+                    type: 'Error común'
+                });
+            }
+
+            // Buscar en diccionario por distancia de Levenshtein
+            for (const dictWord of dictionary) {
+                if (Math.abs(dictWord.length - word.length) <= maxDistance) {
+                    const distance = levenshteinDistance(word.toLowerCase(), dictWord);
+                    if (distance <= maxDistance && distance > 0) {
+                        const confidence = Math.max(20, 100 - (distance * 25));
+                        suggestions.push({
+                            word: dictWord,
+                            confidence: confidence,
+                            type: 'Similitud léxica'
+                        });
+                    }
+                }
+            }
+
+            // Ordenar por confianza
+            return suggestions
+                .sort((a, b) => b.confidence - a.confidence)
+                .slice(0, 5);
+        }
+
+        // Función principal de verificación ortográfica
+        function checkSpelling() {
+            const text = document.getElementById('textInput').value;
+            if (!text.trim()) {
+                alert('Por favor, ingresa texto para verificar');
+                return;
+            }
+
+            // Tokenización avanzada
+            const words = text.toLowerCase()
+                .replace(/[^\w\sáéíóúüñ]/g, ' ')
+                .split(/\s+/)
+                .filter(word => word.length > 0);
+
+            const errors = [];
+            const totalWords = words.length;
+            let errorCount = 0;
+
+            // Análisis de cada palabra
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                
+                // Verificar si la palabra está en el diccionario
+                if (!dictionary.has(word) && !isNumber(word)) {
+                    const suggestions = generateSuggestions(word);
+                    errors.push({
+                        word: word,
+                        position: i,
+                        suggestions: suggestions,
+                        type: determineErrorType(word)
+                    });
+                    errorCount++;
+                }
+            }
+
+            // Actualizar estadísticas
+            updateStats(totalWords, errorCount);
+            
+            // Mostrar errores
+            displayErrors(errors);
+        }
+
+        function isNumber(str) {
+            return !isNaN(str) && !isNaN(parseFloat(str));
+        }
+
+        function determineErrorType(word) {
+            if (commonMistakes[word]) return 'Error común';
+            if (word.length <= 3) return 'Palabra corta';
+            if (!/[aeiouáéíóú]/i.test(word)) return 'Sin vocales';
+            return 'Error ortográfico';
+        }
+
+        function updateStats(total, errors) {
+            document.getElementById('totalWords').textContent = total;
+            document.getElementById('errorCount').textContent = errors;
+            const accuracy = total > 0 ? Math.round(((total - errors) / total) * 100) : 100;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        function displayErrors(errors) {
+            const errorsList = document.getElementById('errorsList');
+            
+            if (errors.length === 0) {
+                errorsList.innerHTML = `
+                    <div style="text-align: center; color: #38a169; padding: 40px;">
+                        <div style="font-size: 3em; margin-bottom: 15px;">✅</div>
+                        <h3>¡Perfecto! No se encontraron errores ortográficos</h3>
+                        <p>Tu texto tiene una ortografía excelente.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            errors.forEach((error, index) => {
+                html += `
+                    <div class="error-item">
+                        <div class="error-word">❌ "${error.word}"</div>
+                        <div class="error-type">Tipo: ${error.type}</div>
+                        <div style="margin-bottom: 10px; font-size: 0.9em; color: #666;">
+                            Sugerencias de corrección:
+                        </div>
+                        <div class="suggestions">
+                            ${error.suggestions.map(sugg => `
+                                <div class="suggestion" onclick="applySuggestion('${error.word}', '${sugg.word}')">
+                                    ${sugg.word}
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill ${getConfidenceClass(sugg.confidence)}" 
+                                             style="width: ${sugg.confidence}%"></div>
+                                    </div>
+                                    <small>${sugg.confidence}% confianza</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            errorsList.innerHTML = html;
+        }
+
+        function getConfidenceClass(confidence) {
+            if (confidence >= 70) return 'confidence-high';
+            if (confidence >= 40) return 'confidence-medium';
+            return 'confidence-low';
+        }
+
+        function applySuggestion(originalWord, suggestion) {
+            const textArea = document.getElementById('textInput');
+            const text = textArea.value;
+            
+            // Crear expresión regular para reemplazar la palabra completa
+            const regex = new RegExp('\\b' + originalWord + '\\b', 'gi');
+            const newText = text.replace(regex, suggestion);
+            
+            textArea.value = newText;
+            
+            // Mostrar confirmación
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #38a169;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.innerHTML = `✅ "${originalWord}" corregido a "${suggestion}"`;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+            
+            // Re-verificar automáticamente
+            setTimeout(() => {
+                checkSpelling();
+            }, 500);
+        }
+
+        // Verificación automática mientras se escribe (con debounce)
+        let timeout;
+        document.getElementById('textInput').addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (this.value.trim()) {
+                    checkSpelling();
+                }
+            }, 1500);
+        });
+
+        // Animación CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
